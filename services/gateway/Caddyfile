@@ -1,0 +1,70 @@
+# God's Eye View gateway for Railway (community template).
+#
+# The only public service.
+#   /gateway-health                    -> 200, Railway's healthcheck for this service
+#   /manifest.webmanifest, /icons/*    -> app, no login (browsers fetch the web
+#                                         app manifest without credentials;
+#                                         these are the app's public static files)
+#   everything else                    -> HTTP basic auth, then the app
+#
+# Why a login: the app is a key broker. Its server spends the operator's
+# provider keys (OpenAI, Gemini, Google Places, TomTom, Mapillary, AISStream,
+# FIRMS, OpenSky) for whoever can reach it, and the browser bundle carries the
+# Google Maps and Cesium ion keys.
+#
+# Two files are written at start by entrypoint.sh:
+#   /tmp/gev-gateway/auth.caddy      basic_auth block, or a no-op in public mode
+#   /tmp/gev-gateway/upstream.caddy  request headers for the app (see entrypoint.sh)
+{
+	admin off
+	auto_https off
+	servers {
+		# Railway's edge reaches the service from private address space.
+		trusted_proxies static private_ranges 100.64.0.0/10
+		client_ip_headers X-Forwarded-For
+	}
+}
+
+(to_app) {
+	reverse_proxy {$GEV_APP_UPSTREAM} {
+		import /tmp/gev-gateway/upstream.caddy
+		# Streams (server-sent events, MJPEG camera feeds) must not be buffered.
+		flush_interval -1
+		lb_try_duration 15s
+	}
+}
+
+:{$PORT:8080} {
+	header {
+		X-Robots-Tag "noindex, nofollow"
+		-Server
+	}
+
+	handle /gateway-health {
+		respond "ok" 200
+	}
+
+	@appmeta path /manifest.webmanifest /icons/*
+	handle @appmeta {
+		import to_app
+	}
+
+	handle {
+		import /tmp/gev-gateway/auth.caddy
+		# The browser repeats the basic-auth credential on every request; the
+		# app never needs it.
+		request_header -Authorization
+		# Static files arrive compressed from vite preview; its API routes do
+		# not. Compress JSON only (flight and vessel snapshots are large) and
+		# leave event streams, camera streams and images alone.
+		encode {
+			zstd
+			gzip
+			match {
+				header Content-Type application/json*
+				header Content-Type application/geo+json*
+			}
+		}
+		import to_app
+	}
+}

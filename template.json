@@ -1,0 +1,199 @@
+{
+  "name": "God's Eye View v0.3 Live Satellite and World Tracker",
+  "description": "Track real satellites, flights and world events on a live 3D globe.",
+  "category": "Analytics",
+  "tags": [
+    "gods-eye-view",
+    "3d-globe",
+    "cesium",
+    "satellites",
+    "flight-tracking",
+    "adsb",
+    "osint",
+    "geospatial",
+    "earthquakes"
+  ],
+  "image": "https://cdn.jsdelivr.net/gh/bilawalsidhu/gods-eye-view@v0.3.0/public/icons/icon-512.png",
+  "upstream": {
+    "repo": "bilawalsidhu/gods-eye-view",
+    "version": "v0.3.0 (released 2026-10-28, commit 72eb3fd)",
+    "license": "MIT (source code only; bundled and live data keep their own terms)",
+    "checked": "2026-10-30"
+  },
+  "services": {
+    "gateway": {
+      "icon": "https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/svg/caddy.svg",
+      "source": {
+        "repo": "baranberkay96/gods-eye-view-railway",
+        "rootDirectory": "/services/gateway"
+      },
+      "startCommand": null,
+      "preDeployCommand": null,
+      "healthcheckPath": "/gateway-health",
+      "healthcheckTimeout": 120,
+      "restartPolicyType": "ON_FAILURE",
+      "restartPolicyMaxRetries": 10,
+      "numReplicas": 1,
+      "cronSchedule": null,
+      "publicDomain": true,
+      "targetPort": 8080,
+      "tcpProxy": null,
+      "volume": null,
+      "variables": {
+        "PORT": {
+          "defaultValue": "8080",
+          "description": "Port Caddy listens on; the public domain and Railway's healthcheck use it.",
+          "required": false
+        },
+        "GEV_APP_UPSTREAM": {
+          "defaultValue": "${{gods-eye-view.RAILWAY_PRIVATE_DOMAIN}}:${{gods-eye-view.PORT}}",
+          "description": "Private host:port of the gods-eye-view service.",
+          "required": false
+        },
+        "GEV_UI_USERNAME": {
+          "defaultValue": "admin",
+          "description": "Login name for the globe (HTTP basic auth). Letters, digits and . _ @ - only.",
+          "required": false
+        },
+        "GEV_UI_PASSWORD": {
+          "defaultValue": "${{secret(24, \"abcdefghijkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789\")}}",
+          "description": "Login password, generated at deploy (at least 12 characters). Change it here and redeploy the gateway.",
+          "required": false
+        },
+        "GEV_PUBLIC_ACCESS": {
+          "defaultValue": "false",
+          "description": "true removes the login. Visitors then see your Google Maps and Cesium ion keys; the app refuses its paid routes (voice, Places, TomTom, Mapillary).",
+          "required": false
+        }
+      }
+    },
+    "gods-eye-view": {
+      "icon": "https://cdn.jsdelivr.net/gh/bilawalsidhu/gods-eye-view@v0.3.0/public/icons/icon-512.png",
+      "source": {
+        "repo": "baranberkay96/gods-eye-view-railway",
+        "rootDirectory": "/services/gods-eye-view"
+      },
+      "startCommand": null,
+      "preDeployCommand": null,
+      "healthcheckPath": "/",
+      "healthcheckTimeout": 900,
+      "restartPolicyType": "ALWAYS",
+      "numReplicas": 1,
+      "cronSchedule": null,
+      "publicDomain": false,
+      "targetPort": null,
+      "tcpProxy": null,
+      "volume": {
+        "mountPath": "/app/.gev-cache"
+      },
+      "variables": {
+        "PORT": {
+          "defaultValue": "4173",
+          "description": "Port vite preview listens on (upstream default); the gateway and Railway's healthcheck use it.",
+          "required": false
+        },
+        "GEV_ALLOWED_HOSTS": {
+          "defaultValue": "${{gateway.RAILWAY_PUBLIC_DOMAIN}}",
+          "description": "Comma-separated host names the app answers (upstream Host allowlist). Add your custom domain here.",
+          "required": false
+        },
+        "CESIUM_ION_TOKEN": {
+          "defaultValue": "",
+          "description": "Optional, free for eligible personal non-commercial use: Google Photorealistic 3D and world terrain via Cesium ion. Browser-visible; built into the bundle.",
+          "required": false
+        },
+        "GOOGLE_MAPS_API_KEY": {
+          "defaultValue": "",
+          "description": "Optional, metered: direct Google Photorealistic 3D, place search and Street View. Browser-visible; restrict it to your domain. Built into the bundle.",
+          "required": false
+        },
+        "GOOGLE_MAPS_SERVER_API_KEY": {
+          "defaultValue": "",
+          "description": "Optional, metered: separate server-only Google key for Places, Geocoding and the camera Street View fallback. Falls back to GOOGLE_MAPS_API_KEY.",
+          "required": false
+        },
+        "MAPILLARY_CLIENT_TOKEN": {
+          "defaultValue": "",
+          "description": "Optional, free: Mapillary street-level photos. A public client token by design; built into the bundle.",
+          "required": false
+        },
+        "OPENAI_API_KEY": {
+          "defaultValue": "",
+          "description": "Optional, metered: voice control (OpenAI Realtime) and the AI HUD summary. Server-side only.",
+          "required": false
+        },
+        "GEMINI_API_KEY": {
+          "defaultValue": "",
+          "description": "Optional, metered: Gemini Live as an alternative voice provider. Server-side only.",
+          "required": false
+        },
+        "AISSTREAM_API_KEY": {
+          "defaultValue": "",
+          "description": "Optional, free: live ships from aisstream.io. Server-side only.",
+          "required": false
+        },
+        "FIRMS_MAP_KEY": {
+          "defaultValue": "",
+          "description": "Optional, free: NASA FIRMS active-fire detections (map key). Server-side only.",
+          "required": false
+        },
+        "TOMTOM_API_KEY": {
+          "defaultValue": "",
+          "description": "Optional, free tier: TomTom live flow speeds for the traffic layer. Server-side only.",
+          "required": false
+        },
+        "OPENSKY_CLIENT_ID": {
+          "defaultValue": "",
+          "description": "Optional, free account: OpenSky OAuth client id for more flight-polling credits. Anonymous access works without it.",
+          "required": false
+        },
+        "OPENSKY_CLIENT_SECRET": {
+          "defaultValue": "",
+          "description": "Optional: OpenSky OAuth client secret, paired with OPENSKY_CLIENT_ID.",
+          "required": false
+        },
+        "LL2_API_TOKEN": {
+          "defaultValue": "",
+          "description": "Optional, paid: Launch Library 2 token for higher limits. Public access (15 calls/hour, cached) works without it.",
+          "required": false
+        },
+        "ONTARIO_511_API_KEY": {
+          "defaultValue": "",
+          "description": "Optional, free developer key: adds the Ontario 511 traffic cameras.",
+          "required": false
+        },
+        "GITHUB_TOKEN": {
+          "defaultValue": "",
+          "description": "Optional: a GitHub token with no extra scopes for the GhostMaps layer's GitHub API calls (shared cloud IPs hit the anonymous limit).",
+          "required": false
+        },
+        "OVERPASS_UPSTREAMS": {
+          "defaultValue": "",
+          "description": "Optional: comma-separated Overpass API URLs you run or pay for. Upstream uses no public Overpass instance by default.",
+          "required": false
+        },
+        "GEV_RATELIMIT_OPENAI_PER_MIN": {
+          "defaultValue": "30",
+          "description": "OpenAI token and HUD-summary requests per minute. Behind the gateway all users share one budget. 0 = unlimited.",
+          "required": false
+        },
+        "GEV_RATELIMIT_GOOGLE_PER_MIN": {
+          "defaultValue": "60",
+          "description": "Google Places requests per minute (upstream's advice for non-localhost hosts). Shared by all users. 0 = unlimited.",
+          "required": false
+        },
+        "TOMTOM_DAILY_TILE_BUDGET": {
+          "defaultValue": "6000",
+          "description": "Max TomTom tile fetches per UTC day (upstream default, about 186k a month). Counter kept on the volume.",
+          "required": false
+        },
+        "GEV_REBUILD_ON_KEY_CHANGE": {
+          "defaultValue": "true",
+          "description": "Rebuild the browser bundle at start if the three browser keys differ from the image's build (needs about 2 GB RAM).",
+          "required": false
+        }
+      }
+    }
+  },
+  "buckets": []
+}
