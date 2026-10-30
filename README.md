@@ -1,5 +1,7 @@
 # Deploy and Host God's Eye View with Railway
 
+[![Deploy on Railway](https://railway.com/button.svg)](https://railway.com/deploy/gods-eye-view-v03-live-satellite-and-wor?referralCode=20H68q)
+
 God's Eye View is an open-source 3D globe for live public data: aircraft, satellites, earthquakes, cyclones, rocket launches, weather and public traffic cameras, with optional ships, wildfires and voice control. This community template builds release v0.3.0 from source, puts it behind a generated login and keeps its feed cache on a volume. No API key is required.
 
 ## About Hosting God's Eye View
